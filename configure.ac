@@ -426,6 +426,7 @@ AC_CHECK_HEADERS(m4_normalize([
 	iconv.h
 	linux/if_bonding.h
 	linux/if_bridge.h
+	linux/kd.h
 	linux/nexthop.h
 	linux/mpls.h
 	mqueue.h
@@ -500,6 +501,11 @@ AC_CHECK_TYPES([struct statfs64], [
 #include <asm/statfs.h>])
 ],, [#include <linux/types.h>
 #include <asm/statfs.h>])
+
+AC_CHECK_TYPES(m4_normalize([
+	struct kbdiacruc,
+	struct kbdiacrsuc
+]),,, [#include <linux/kd.h>])
 
 AC_CHECK_TYPES(m4_normalize([
 	struct kvm_cpuid2,
