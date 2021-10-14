@@ -427,6 +427,32 @@ decode_nla_flags(struct tcb *const tcp,
 }
 
 bool
+decode_nla_af_spec(struct tcb *const tcp,
+		   const kernel_ulong_t addr,
+		   const unsigned int len,
+		   uint8_t af,
+		   const struct af_spec_decoder_desc *descs,
+		   size_t desc_cnt)
+{
+	const struct af_spec_decoder_desc *const descs_end = descs + desc_cnt;
+	const struct af_spec_decoder_desc *desc = descs;
+
+	for (; desc < descs_end; desc++) {
+		if (desc->af == af)
+			break;
+	}
+
+	if (desc >= descs_end)
+		return false;
+
+	decode_nlattr(tcp, addr, len,
+		      desc->xlat, desc->dflt, desc->table, desc->size, NULL);
+
+	return true;
+}
+
+
+bool
 decode_nla_be16(struct tcb *const tcp,
 		const kernel_ulong_t addr,
 		const unsigned int len,
