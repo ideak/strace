@@ -1338,6 +1338,7 @@ name ## _ioctl(struct tcb *, unsigned int request, kernel_ulong_t arg)	\
 
 DECL_IOCTL(dm);
 DECL_IOCTL(evdev);
+DECL_IOCTL(fb);
 DECL_IOCTL(fs_0x94);
 DECL_IOCTL(fs_f);
 DECL_IOCTL(fs_x);
@@ -1665,6 +1666,7 @@ printnum_ ## name(struct tcb *, kernel_ulong_t addr, const char *fmt)	\
 	ATTRIBUTE_FORMAT((printf, 3, 0))				\
 /* End of DECL_PRINTNUM definition. */
 
+DECL_PRINTNUM(char);
 DECL_PRINTNUM(short);
 DECL_PRINTNUM(int);
 DECL_PRINTNUM(int64);
