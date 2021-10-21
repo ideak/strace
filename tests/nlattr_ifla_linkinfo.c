@@ -37,9 +37,9 @@
 	do {								\
 		/* 64 is guestimate for maximum unknown type len */	\
 		char buf[8 * 2 + 64 + objsz_];				\
-		const char **arrstrs[] = arrstrs_;			\
-		const char ***arrstrs_pos = arrstrs;			\
-		const char **arrstr = *arrstrs_pos;			\
+		const char *const *arrstrs[] = arrstrs_;		\
+		const char *const **arrstrs_pos = arrstrs;		\
+		const char *const *arrstr = *arrstrs_pos;		\
 		const char *type = NULL;				\
 									\
 		for (type = arrstr ? arrstr[0] : NULL; type && arrstr;	\
@@ -267,7 +267,7 @@ int
 main(void)
 {
 	static const uint8_t unknown_msg[] = { 0xab, 0xac, 0xdb, 0xcd };
-	static const char *unsupported_tunnel_types[] = {
+	static const char *const unsupported_tunnel_types[] = {
 		"batadv", "bareudp", "bond",
 		"caif", "cfhsi",
 		"dummy",
@@ -290,12 +290,12 @@ main(void)
 		"xrm",
 		NULL
 	};
-	static const char *unsupported_xstats_types[] = {
+	static const char *const unsupported_xstats_types[] = {
 		"bridge",
 		"tun",
 		NULL
 	};
-	static const char *unsupported_data_types[] = {
+	static const char *const unsupported_data_types[] = {
 		"can",
 		NULL
 	};
