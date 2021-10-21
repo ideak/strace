@@ -13,7 +13,7 @@ Noteworthy changes in release ?.?? (????-??-??)
     NETLINK_ROUTE netlink messages.
   * Enhanced decoding of io_uring_register and times syscalls.
   * Updated lists of BTRFS_*, DEVCONF_*, DM_*, FAN_REPORT_*, IORING_*,
-    MOVE_MOUNT_*, MPOL_*, PACKET_*, and RTM_* constants.
+    MOVE_MOUNT_*, MPOL_*, PACKET_*, RTM_*, and XFRM_MSG_* constants.
   * Updated lists of ioctl commands from Linux 5.15.
 
 * Bug fixes
