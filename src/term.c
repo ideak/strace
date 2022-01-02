@@ -18,6 +18,48 @@
 #include "xlat/baud_options.h"
 #include "xlat/modem_flags.h"
 
+struct flag_desc {
+	const char *name;
+	unsigned long flag;
+};
+
+static void decode_flags(const char *flag_name, unsigned long flags,
+			 const struct flag_desc *fdesc, int fdesc_size)
+{
+	unsigned long mask = 0;
+	bool first = true;
+	int i;
+
+	tprintf(" %s={", flag_name);
+
+	for (i = 0; i < fdesc_size; i++, fdesc++) {
+		if (mask) {
+			if (!(fdesc->flag & ~mask)) {
+				if ((flags & mask) == fdesc->flag)
+					tprintf("%s", fdesc->name);
+				continue;
+			} else {
+				mask = 0;
+			}
+		}
+
+		if (!(flags & fdesc->flag))
+			continue;
+
+		if (__builtin_popcountl(fdesc->flag) > 1) {
+			tprintf("%s%s:", first ? "" : ",", fdesc->name);
+			mask = fdesc->flag;
+			first = false;
+			continue;
+		}
+
+		tprintf("%s%s", first ? "" : ",", fdesc->name);
+		first = false;
+	}
+
+	tprintf("}");
+}
+
 static void
 decode_termios(struct tcb *const tcp, const kernel_ulong_t addr)
 {
@@ -27,13 +69,135 @@ decode_termios(struct tcb *const tcp, const kernel_ulong_t addr)
 	if (umove_or_printaddr(tcp, addr, &tios))
 		return;
 	if (abbrev(tcp)) {
+		struct flag_desc i_flags[] = {
+			{ "IGNBRK", 0000001, },
+			{ "BRKINT", 0000002, },
+			{ "IGNPAR", 0000004, },
+			{ "PARMRK", 0000010, },
+			{ "INPCK", 0000020, },
+			{ "ISTRIP", 0000040, },
+			{ "INLCR", 0000100, },
+			{ "IGNCR", 0000200, },
+			{ "ICRNL", 0000400, },
+			{ "IUCLC", 0001000, },
+			{ "IXON", 0002000, },
+			{ "IXANY", 0004000, },
+			{ "IXOFF", 0010000, },
+			{ "IMAXBEL", 0020000, },
+			{ "IUTF8", 0040000, },
+		};
+		struct flag_desc o_flags[] = {
+			{ "OPOST", 0000001, },
+			{ "OLCUC", 0000002, },
+			{ "ONLCR", 0000004, },
+			{ "OCRNL", 0000010, },
+			{ "ONOCR", 0000020, },
+			{ "ONLRET", 0000040, },
+			{ "OFILL", 0000100, },
+			{ "OFDEL", 0000200, },
+			{ "NLDLY", 0000400, },
+			{   "NL0", 0000000, },
+			{   "NL1", 0000400, },
+			{ "CRDLY", 0003000, },
+			{   "CR0", 0000000, },
+			{   "CR1", 0001000, },
+			{   "CR2", 0002000, },
+			{   "CR3", 0003000, },
+			{ "TABDLY", 0014000, },
+			{   "TAB0", 0000000, },
+			{   "TAB1", 0004000, },
+			{   "TAB2", 0010000, },
+			{   "TAB3", 0014000, },
+			{   "XTABS", 0014000, },
+			{ "BSDLY", 0020000, },
+			{   "BS0", 0000000, },
+			{   "BS1", 0020000, },
+			{ "VTDLY", 0040000, },
+			{   "VT0", 0000000, },
+			{   "VT1", 0040000, },
+			{ "FFDLY", 0100000, },
+			{   "FF0", 0000000, },
+			{   "FF1", 0100000, },
+		};
+		struct flag_desc c_flags[] = {
+			{ "CBAUDEX", 0010000, },
+			{ "CBAUD", 0010017, },
+			{   "B0", 0000000, },		/* hang up", */
+			{   "B50", 0000001, },
+			{   "B75", 0000002, },
+			{   "B110", 0000003, },
+			{   "B134", 0000004, },
+			{   "B150", 0000005, },
+			{   "B200", 0000006, },
+			{   "B300", 0000007, },
+			{   "B600", 0000010, },
+			{   "B1200", 0000011, },
+			{   "B1800", 0000012, },
+			{   "B2400", 0000013, },
+			{   "B4800", 0000014, },
+			{   "B9600", 0000015, },
+			{   "B19200", 0000016, },
+			{   "B38400", 0000017, },
+			{   "BOTHER", 0010000, },
+			{   "B57600", 0010001, },
+			{   "B115200", 0010002, },
+			{   "B230400", 0010003, },
+			{   "B460800", 0010004, },
+			{   "B500000", 0010005, },
+			{   "B576000", 0010006, },
+			{   "B921600", 0010007, },
+			{   "B1000000", 0010010, },
+			{   "B1152000", 0010011, },
+			{   "B1500000", 0010012, },
+			{   "B2000000", 0010013, },
+			{   "B2500000", 0010014, },
+			{   "B3000000", 0010015, },
+			{   "B3500000", 0010016, },
+			{   "B4000000", 0010017, },
+			{ "CSIZE", 0000060, },
+			{   "CS5", 0000000, },
+			{   "CS6", 0000020, },
+			{   "CS7", 0000040, },
+			{   "CS8", 0000060, },
+			{ "CSTOPB", 0000100, },
+			{ "CREAD", 0000200, },
+			{ "PARENB", 0000400, },
+			{ "PARODD", 0001000, },
+			{ "HUPCL", 0002000, },
+			{ "CLOCAL", 0004000, },
+			// { "CIBAUD", 002003600000, },	/* input baud rate */
+			{ "CMSPAR", 010000000000, },	/* mark or space (stick) parity */
+			{ "CRTSCTS", 020000000000, },	/* flow control */
+		};
+		struct flag_desc l_flags[] = {
+			{ "ISIG", 0000001, },
+			{ "ICANON", 0000002, },
+			{ "XCASE", 0000004, },
+			{ "ECHO", 0000010, },
+			{ "ECHOE", 0000020, },
+			{ "ECHOK", 0000040, },
+			{ "ECHONL", 0000100, },
+			{ "NOFLSH", 0000200, },
+			{ "TOSTOP", 0000400, },
+			{ "ECHOCTL", 0001000, },
+			{ "ECHOPRT", 0002000, },
+			{ "ECHOKE", 0004000, },
+			{ "FLUSHO", 0010000, },
+			{ "PENDIN", 0040000, },
+			{ "IEXTEN", 0100000, },
+			{ "EXTPROC", 0200000, },
+		};
+
 		tprints("{");
 		printxval(baud_options, tios.c_cflag & CBAUD, "B???");
-		tprintf(" %sopost %sisig %sicanon %secho ...}",
-			(tios.c_oflag & OPOST) ? "" : "-",
-			(tios.c_lflag & ISIG) ? "" : "-",
-			(tios.c_lflag & ICANON) ? "" : "-",
-			(tios.c_lflag & ECHO) ? "" : "-");
+
+		decode_flags("c_iflag", tios.c_iflag, i_flags, ARRAY_SIZE(i_flags));
+		decode_flags("c_oflag", tios.c_oflag, o_flags, ARRAY_SIZE(o_flags));
+		decode_flags("c_cflag", tios.c_cflag, c_flags, ARRAY_SIZE(c_flags));
+		decode_flags("c_lflag", tios.c_lflag, l_flags, ARRAY_SIZE(l_flags));
+
+		tprints(" }");
+
 		return;
 	}
 	tprintf("{c_iflags=%#lx, c_oflags=%#lx, ",
